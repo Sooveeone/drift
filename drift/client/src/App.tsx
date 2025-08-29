@@ -6,7 +6,6 @@ import {
   Navigate,
   useLocation,
 } from "react-router-dom";
-import Home from "./components/Home";
 import Register from "./components/auth/Register";
 import Login from "./components/auth/Login";
 import Dashboard from "./components/dashboard/Dashboard";
@@ -18,9 +17,9 @@ const ConditionalMusicPlayer: React.FC = () => {
   const location = useLocation();
   
   // Pages where music should NOT play
-  const noMusicPages = ['/', '/login', '/register'];
+  const noMusicPages = ['/login', '/register'];
   
-  // Don't show music player on landing, login, or register pages
+  // Don't show music player on login or register pages
   if (noMusicPages.includes(location.pathname)) {
     return null;
   }
@@ -32,12 +31,12 @@ const App: React.FC = () => {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<Home />} />
+        <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="/register" element={<Login />} />
         <Route path="/login" element={<Login />} />
         <Route path="/dashboard/*" element={<Dashboard />} />
         <Route path="/schedule" element={<Schedule />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
       <ConditionalMusicPlayer />
     </Router>

@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { Target, Camera, X, Upload } from 'lucide-react';
+import { Target, Camera, X, Upload, ChevronLeft } from 'lucide-react';
 import { generateSchedule } from '../services/huggingfaceService';
 import { createAchievement, createAchievementWithImages } from '../services/achievementService';
 import DriftLogo from '../assets/drift_logo.svg';
 import { useNavigate } from "react-router-dom";
+import { scheduleAPI } from "../services/api";
 
 // Beautiful Loading Component
 const DriftLoadingScreen: React.FC = () => {
@@ -77,6 +78,8 @@ const ScheduleGenerator: React.FC = () => {
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [uploadedImages, setUploadedImages] = useState<File[]>([]);
   const [showImageUpload, setShowImageUpload] = useState(false);
+  const [hasInitialized, setHasInitialized] = useState(false); // Prevent duplicate initialization
+  const [isSaving, setIsSaving] = useState(false); // Prevent duplicate saves
 
   // Helper to parse schedule string into table data
   const parseScheduleToTable = (scheduleStr: string) => {
@@ -91,10 +94,60 @@ const ScheduleGenerator: React.FC = () => {
       .filter(row => row.date && row.tasks.length > 0);
   };
 
+  const saveScheduleToList = async (goalData: any, scheduleData: string, isManual: boolean = false) => {
+    // Prevent duplicate saves
+    if (isSaving) {
+      console.log('Save already in progress, skipping...');
+      return null;
+    }
+    
+    try {
+      setIsSaving(true);
+      
+      // Count tasks in schedule
+      const totalTasks = scheduleData.split(';')
+        .filter(day => day.trim())
+        .reduce((total, day) => {
+          const tasks = day.split('|').slice(1); // Remove date part
+          return total + tasks.filter(task => task.trim()).length;
+        }, 0);
+
+      const schedulePayload = {
+        goalName: goalData.goalName,
+        objective: goalData.objective,
+        deadline: goalData.deadline,
+        dedication: goalData.dedication,
+        isManual,
+        scheduleData,
+        totalTasks
+      };
+
+      const savedSchedule = await scheduleAPI.create(schedulePayload);
+      return savedSchedule._id;
+    } catch (error) {
+      console.error('Error saving schedule:', error);
+      // If there's an error, try to continue without saving
+      return null;
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   useEffect(() => {
+    // Prevent multiple initializations - check localStorage flag first
+    const initKey = 'schedule_initializing';
+    if (localStorage.getItem(initKey) === 'true' || hasInitialized) {
+      return;
+    }
+    
+    // Set initialization flag
+    localStorage.setItem(initKey, 'true');
+    setHasInitialized(true);
+    
     const stored = localStorage.getItem('goalData');
     const storedSchedule = localStorage.getItem('scheduleData');
     const storedMeta = localStorage.getItem('scheduleMeta');
+    
     if (stored) {
       const data = JSON.parse(stored);
       setGoal(data.objective || '');
@@ -107,14 +160,76 @@ const ScheduleGenerator: React.FC = () => {
         objective: data.objective,
         deadline: data.deadline,
         dedication: data.dedication,
+        isManual: data.isManual || false
       });
 
-      if (storedSchedule && storedMeta === meta) {
+      // Check if this is an existing schedule (has scheduleId) - prioritize this check
+      if (data.scheduleId && storedSchedule) {
+        // This is an existing schedule being viewed - load it directly
         setSchedule(storedSchedule);
         const parsed = parseScheduleToTable(storedSchedule);
         setTableData(parsed);
-        setChecked(parsed.map(day => day.tasks.map(() => false)));
-      } else if (data.objective && data.deadline && data.dedication) {
+        
+        // Load existing progress from scheduleMeta if available
+        if (storedMeta) {
+          const metaData = JSON.parse(storedMeta);
+          if (metaData.progress && Array.isArray(metaData.progress)) {
+            setChecked(metaData.progress);
+          } else {
+            setChecked(parsed.map(day => day.tasks.map(() => false)));
+          }
+        } else {
+          setChecked(parsed.map(day => day.tasks.map(() => false)));
+        }
+        localStorage.removeItem('schedule_initializing');
+      } else if (storedSchedule && storedMeta === meta) {
+        // Use existing schedule data (either AI or manual)
+        setSchedule(storedSchedule);
+        const parsed = parseScheduleToTable(storedSchedule);
+        setTableData(parsed);
+        
+        // Load existing progress if available
+        const savedSchedules = JSON.parse(localStorage.getItem('savedSchedules') || '[]');
+        const existingSchedule = savedSchedules.find((s: any) => 
+          s.goalName === data.goalName && 
+          s.objective === data.objective && 
+          s.deadline === data.deadline &&
+          s.isManual === (data.isManual || false)
+        );
+        
+        if (existingSchedule && existingSchedule.progress) {
+          setChecked(existingSchedule.progress);
+        } else {
+          setChecked(parsed.map(day => day.tasks.map(() => false)));
+        }
+        localStorage.removeItem('schedule_initializing');
+      } else if (data.isManual && storedSchedule) {
+        // Manual schedule - use the stored data directly
+        setSchedule(storedSchedule);
+        const parsed = parseScheduleToTable(storedSchedule);
+        setTableData(parsed);
+        
+        // Load existing progress if available
+        const savedSchedules = JSON.parse(localStorage.getItem('savedSchedules') || '[]');
+        const existingSchedule = savedSchedules.find((s: any) => 
+          s.goalName === data.goalName && 
+          s.objective === data.objective && 
+          s.deadline === data.deadline &&
+          s.isManual === true
+        );
+        
+        if (existingSchedule && existingSchedule.progress) {
+          setChecked(existingSchedule.progress);
+        } else {
+          setChecked(parsed.map(day => day.tasks.map(() => false)));
+        }
+        localStorage.setItem('scheduleMeta', meta);
+        
+        // Note: Manual schedules are saved when created in ManualSchedule component
+        // No need to save again when viewing existing schedule
+        localStorage.removeItem('schedule_initializing');
+      } else if (data.objective && data.deadline && data.dedication && !data.isManual) {
+        // AI-generated schedule
         setLoading(true);
         generateSchedule(data.objective, new Date().toISOString().split('T')[0], data.deadline, data.dedication, data.category)
           .then(result => {
@@ -124,19 +239,83 @@ const ScheduleGenerator: React.FC = () => {
             setChecked(parsed.map(day => day.tasks.map(() => false)));
             localStorage.setItem('scheduleData', result);
             localStorage.setItem('scheduleMeta', meta);
+            
+            // Only save AI schedule to list if it's a new schedule (no scheduleId means it's new)
+            if (!data.scheduleId) {
+              saveScheduleToList(data, result, false).then(scheduleId => {
+                if (scheduleId) {
+                  // Update the stored goal data with the schedule ID
+                  const updatedData = { ...data, scheduleId };
+                  localStorage.setItem('goalData', JSON.stringify(updatedData));
+                }
+                // Clear initialization flag after successful save
+                localStorage.removeItem('schedule_initializing');
+              });
+            } else {
+              // Clear initialization flag for existing schedules
+              localStorage.removeItem('schedule_initializing');
+            }
+          })
+          .catch(error => {
+            console.error('AI generation failed:', error);
+            // Set a user-friendly error message for display
+            setSchedule('Failed to generate schedule. Please try again.');
+            setTableData([]);
+            setChecked([]);
+            // Clear initialization flag on error
+            localStorage.removeItem('schedule_initializing');
           })
           .finally(() => setLoading(false));
+      } else {
+        // Clear initialization flag if no conditions are met
+        localStorage.removeItem('schedule_initializing');
       }
+    } else {
+      // Clear initialization flag if no stored data
+      localStorage.removeItem('schedule_initializing');
     }
-  }, []);
+  }, [hasInitialized]);
 
   const allDates = tableData.map(row => row.date);
   const maxTasks = Math.max(...tableData.map(row => row.tasks.length), 0);
 
+  const updateScheduleProgress = async (newChecked: boolean[][]) => {
+    // Update the saved schedule with current progress
+    const stored = localStorage.getItem('goalData');
+    if (stored) {
+      const goalData = JSON.parse(stored);
+      
+      // Check if we have a scheduleId (for saved schedules)
+      if (goalData.scheduleId) {
+        try {
+          await scheduleAPI.updateProgress(goalData.scheduleId, newChecked);
+        } catch (error) {
+          console.error('Error updating schedule progress:', error);
+        }
+      }
+    }
+  };
+
   const handleCheckboxChange = (dayIdx: number, taskIdx: number) => {
     setChecked(prev => {
+      // Safety check to prevent invalid indices
+      if (dayIdx < 0 || dayIdx >= prev.length || taskIdx < 0 || taskIdx >= prev[dayIdx].length) {
+        console.warn('Invalid checkbox indices:', dayIdx, taskIdx);
+        return prev;
+      }
+      
       const updated = prev.map(arr => [...arr]);
       updated[dayIdx][taskIdx] = !updated[dayIdx][taskIdx];
+      
+      // Update saved schedule progress (but only for existing schedules)
+      const stored = localStorage.getItem('goalData');
+      if (stored) {
+        const goalData = JSON.parse(stored);
+        if (goalData.scheduleId) {
+          updateScheduleProgress(updated);
+        }
+      }
+      
       return updated;
     });
   };
@@ -150,7 +329,8 @@ const ScheduleGenerator: React.FC = () => {
 
   // Check if goal should be saved when 100% is reached
   useEffect(() => {
-    if (progress === 100 && !goalSaved && !showSaveModal && goalName.trim()) {
+    // Only trigger achievement save for schedules that have been properly initialized
+    if (progress === 100 && !goalSaved && !showSaveModal && goalName.trim() && hasInitialized) {
       // Check if this goal was already saved to prevent duplicate saves
       const savedKey = `goal_saved_${goalName}_${endDate}`;
       const alreadySaved = localStorage.getItem(savedKey);
@@ -161,7 +341,7 @@ const ScheduleGenerator: React.FC = () => {
         setGoalSaved(true);
       }
     }
-  }, [progress, goalSaved, showSaveModal, goalName, endDate]);
+  }, [progress, goalSaved, showSaveModal, goalName, endDate, hasInitialized]);
 
   const saveGoal = async () => {
     try {
@@ -262,11 +442,34 @@ const ScheduleGenerator: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-drift-orange via-drift-pink to-drift-blue">
       <div className="max-w-7xl mx-auto px-4 py-8">
+        {/* Back Button */}
+        <div className="mb-6">
+          <button
+            onClick={() => navigate("/dashboard/schedules")}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-white/20 backdrop-blur-md text-white rounded-full font-medium hover:bg-white/30 transition-all duration-300 border border-white/30 shadow-lg"
+          >
+            <ChevronLeft className="h-5 w-5" />
+            Back to Schedules
+          </button>
+        </div>
+
         {/* Header Section */}
         <div className="text-center mb-8">
           <img src={DriftLogo} alt="Drift logo" className="h-16 w-16 mx-auto mb-4" />
-          <h1 className="text-4xl font-bold text-white mb-2">Your Personalized Schedule</h1>
-          <p className="text-white/80 text-lg"> Drift's plan to achieve your goals</p>
+          <h1 className="text-4xl font-bold text-white mb-2">
+            {(() => {
+              const stored = localStorage.getItem('goalData');
+              const isManual = stored ? JSON.parse(stored).isManual : false;
+              return isManual ? 'Your Manual Schedule' : 'Your Personalized Schedule';
+            })()}
+          </h1>
+          <p className="text-white/80 text-lg">
+            {(() => {
+              const stored = localStorage.getItem('goalData');
+              const isManual = stored ? JSON.parse(stored).isManual : false;
+              return isManual ? 'Your custom plan to achieve your goals' : "Drift's plan to achieve your goals";
+            })()}
+          </p>
         </div>
 
         {/* Goal Name Input */}
@@ -324,14 +527,10 @@ const ScheduleGenerator: React.FC = () => {
         {/* Action Buttons */}
         <div className="flex justify-center gap-4 mb-8">
           <button
-            onClick={() => {
-              localStorage.removeItem('scheduleData');
-              localStorage.removeItem('scheduleMeta');
-              window.location.reload();
-            }}
+            onClick={() => navigate("/dashboard/schedules")}
             className="px-6 py-3 bg-white/20 backdrop-blur-md text-white rounded-full font-medium hover:bg-white/30 transition-all duration-300 border border-white/30 shadow-lg"
           >
-            Regenerate Schedule
+            View All Schedules
           </button>
           
           <button

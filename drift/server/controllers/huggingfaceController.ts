@@ -132,15 +132,8 @@ console.log("===================================================================
         ? rawOutput.slice(thinkEndIndex + "</think>".length).trim()
         : rawOutput.trim();
 
-    // Save to MongoDB
-    await Schedule.create({
-      userId: req.user?._id,
-      goal,
-      startDate: todayDate,
-      endDate,
-      intensity,
-      rawSchedule: schedule,
-    });
+    // Note: Schedule saving is now handled by the frontend through the schedule API
+    // This endpoint only generates and returns the schedule data
 
 
 

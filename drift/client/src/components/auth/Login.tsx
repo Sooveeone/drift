@@ -74,7 +74,7 @@ const LoginModal: React.FC = () => {
   };
 
   const handleClose = () => {
-    navigate("/");
+    navigate("/login");
   };
 
   return (

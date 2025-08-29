@@ -21,7 +21,11 @@ const getGoalIcon = (objective: string) => {
   }
 };
 
-const AchievementArchive: React.FC = () => {
+interface AchievementArchiveProps {
+  sidebarCollapsed: boolean;
+}
+
+const AchievementArchive: React.FC<AchievementArchiveProps> = ({ sidebarCollapsed }) => {
   const [completedGoals, setCompletedGoals] = useState<Achievement[]>([]);
   const [viewMode, setViewMode] = useState<'slideshow' | 'grid'>('slideshow');
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -164,13 +168,16 @@ const AchievementArchive: React.FC = () => {
   const IconComponent = getGoalIcon(currentGoal?.objective || '');
 
   return (
-    <div className="absolute inset-0 bg-gradient-to-b from-drift-orange via-drift-pink to-drift-blue overflow-auto">
+    <div className="min-h-full bg-gradient-to-b from-drift-orange via-drift-pink to-drift-blue overflow-auto">
       <div className="max-w-6xl mx-auto px-4 py-8 min-h-full flex flex-col">
         {/* Header */}
         <div className="relative mb-8 md:mb-12">
           {/* Centered Title */}
           <div className="text-center px-16 md:px-0">
             <h1 className="text-2xl md:text-4xl font-bold text-drift-blue mb-2">Achievement Archive</h1>
+            <p className="text-drift-blue/70 text-sm md:text-lg font-medium">
+              Relive Your Success Story, One Achievement at a Time
+            </p>
           </div>
           
           {/* Top Right Button */}
@@ -221,10 +228,38 @@ const AchievementArchive: React.FC = () => {
               >
                 {/* Image Section */}
                 <div className="relative h-48 md:h-80 bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
-                                  {/* Placeholder for achievement image - using icon for now */}
-                  <div className="w-32 h-32 md:w-48 md:h-48 bg-gradient-to-br from-drift-orange/20 via-drift-pink/20 to-drift-blue/20 rounded-2xl flex items-center justify-center">
-                    <IconComponent className="h-16 w-16 md:h-24 md:w-24 text-drift-blue" />
-                  </div>
+                  {/* Achievement image - use first uploaded image or icon fallback */}
+                  {currentGoal?.images && currentGoal.images.length > 0 ? (
+                    <div className="w-full h-full relative overflow-hidden">
+                      <img
+                        src={currentGoal.images[0]?.startsWith('http') 
+                          ? currentGoal.images[0] 
+                          : `${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/uploads/${currentGoal.images[0]}`}
+                        alt={`${currentGoal.name} achievement`}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          // Fallback to icon if image fails to load
+                          const target = e.target as HTMLImageElement;
+                          const parent = target.parentElement;
+                          if (parent) {
+                            parent.innerHTML = `
+                              <div class="w-32 h-32 md:w-48 md:h-48 bg-gradient-to-br from-drift-orange/20 via-drift-pink/20 to-drift-blue/20 rounded-2xl flex items-center justify-center mx-auto">
+                                <svg class="h-16 w-16 md:h-24 md:w-24 text-drift-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                              </div>
+                            `;
+                          }
+                        }}
+                      />
+                      {/* Gradient overlay for better readability */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent"></div>
+                    </div>
+                  ) : (
+                    <div className="w-32 h-32 md:w-48 md:h-48 bg-gradient-to-br from-drift-orange/20 via-drift-pink/20 to-drift-blue/20 rounded-2xl flex items-center justify-center">
+                      <IconComponent className="h-16 w-16 md:h-24 md:w-24 text-drift-blue" />
+                    </div>
+                  )}
                 
                 {/* Achievement badge */}
                 <div className="absolute top-6 left-6">
@@ -363,9 +398,44 @@ const AchievementArchive: React.FC = () => {
                   onClick={() => openImageModal(goal)}
                 >
                   <div className="text-center mb-4">
-                    <div className="w-24 h-24 mx-auto mb-4 rounded-xl bg-gradient-to-br from-drift-orange/20 via-drift-pink/20 to-drift-blue/20 flex items-center justify-center relative">
-                      <IconComponent className="h-12 w-12 text-drift-blue" />
+                    <div className="w-24 h-24 mx-auto mb-4 rounded-xl overflow-hidden relative">
+                      {/* Use first uploaded image or icon fallback */}
+                      {goal.images && goal.images.length > 0 ? (
+                        <div className="w-full h-full relative">
+                          <img
+                            src={goal.images[0]?.startsWith('http') 
+                              ? goal.images[0] 
+                              : `${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/uploads/${goal.images[0]}`}
+                            alt={`${goal.name} achievement`}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              // Fallback to icon if image fails to load
+                              const target = e.target as HTMLImageElement;
+                              const parent = target.parentElement;
+                              if (parent) {
+                                parent.innerHTML = `
+                                  <div class="w-full h-full bg-gradient-to-br from-drift-orange/20 via-drift-pink/20 to-drift-blue/20 flex items-center justify-center">
+                                    <svg class="h-12 w-12 text-drift-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                  </div>
+                                `;
+                              }
+                            }}
+                          />
+                          {/* Gradient overlay */}
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent"></div>
+                        </div>
+                      ) : (
+                        <div className="w-full h-full bg-gradient-to-br from-drift-orange/20 via-drift-pink/20 to-drift-blue/20 flex items-center justify-center">
+                          <IconComponent className="h-12 w-12 text-drift-blue" />
+                        </div>
+                      )}
+                      
+                      {/* Achievement badge */}
                       <div className="absolute top-1 right-1 w-2 h-2 bg-yellow-400 rounded-full"></div>
+                      
+                      {/* Image count indicator */}
                       {goal.images && goal.images.length > 0 && (
                         <div className="absolute bottom-1 left-1 bg-blue-500 text-white rounded-full p-1">
                           <ImageIcon className="h-3 w-3" />

@@ -6,6 +6,7 @@ import goalRoutes from './routes/goalRoutes';
 import authRoutes from './routes/authRoutes';
 import huggingfaceRoutes from './routes/huggingfaceRoutes';
 import achievementRoutes from './routes/achievementRoutes';
+import scheduleRoutes from './routes/scheduleRoutes';
 
 // Initialize express app
 const app = express();
@@ -20,6 +21,8 @@ app.use(cors({
   credentials: true
 }));
 app.use(express.json());
+
+
 app.use(cookieParser());
 
 // Images now served from S3 directly, no local static files needed
@@ -33,6 +36,7 @@ app.use('/api/goals', goalRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/huggingface', huggingfaceRoutes);
 app.use('/api/achievements', achievementRoutes);
+app.use('/api/schedules', scheduleRoutes);
 
 
 export default app; 

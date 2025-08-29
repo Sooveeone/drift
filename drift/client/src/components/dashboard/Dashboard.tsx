@@ -2,14 +2,14 @@
 
 import type React from "react"
 import { useEffect, useState } from "react"
-import { BarChart3, Calendar, ChevronLeft, ChevronRight, Home, LogOut, Menu, Settings, Target, Trophy } from "lucide-react"
+import { BarChart3, Calendar, ChevronLeft, ChevronRight, Edit3, Home, LogOut, Menu, Target, Trophy, User, X } from "lucide-react"
 import DriftLogo from "../../assets/drift_logo.svg"
 import MakeItHappenFloat from "../../assets/makeithappen_float.svg"
 import { Routes, Route, useNavigate, useLocation, Link } from "react-router-dom"
 
 import Goals from "./Goals"
-import CalendarPage from "./CalendarPage"
-import SettingsPage from "./SettingsPage"
+import SchedulesPage from "./SchedulesPage"
+import ManualSchedule from "./ManualSchedule"
 import AchievementArchive from "./AchievementArchive"
 import InfoPage from "./InfoPage";
 
@@ -138,6 +138,7 @@ const Dashboard = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false)
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false)
   const [formData, setFormData] = useState<GoalFormData>({
     objective: "",
     deadline: "",
@@ -182,7 +183,7 @@ const Dashboard = () => {
   const handleLogout = () => {
     localStorage.removeItem("userToken")
     localStorage.removeItem("userName")
-    navigate("/")
+    navigate("/login")
   }
 
   const toggleSidebar = () => {
@@ -203,7 +204,9 @@ const Dashboard = () => {
     }))
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
     // Basic validation
@@ -211,19 +214,24 @@ const Dashboard = () => {
       return // Don't submit if missing required fields
     }
 
-    // Store form data in localStorage temporarily
+    // Store form data in localStorage temporarily for the schedule generation page
     localStorage.setItem("goalData", JSON.stringify(formData))
 
-    // Navigate to schedule page
+    // Show success message
+    setShowSuccessMessage(true)
+
+    // Navigate to schedule page (will generate AI schedule and save it)
     navigate("/schedule")
+    
+    // Note: User can navigate to schedules manually when ready, no forced redirect
   }
 
   const navItems = [
     { name: "Dashboard", icon: Home, path: "/dashboard" },
-    { name: "Calendar", icon: Calendar, path: "/schedule" },
-    { name: "Achievements", icon: Trophy, path: "/dashboard/achievements" },
+    { name: "Schedules", icon: Calendar, path: "/dashboard/schedules" },
+    { name: "Manual Schedule", icon: Edit3, path: "/dashboard/manual" },
+    { name: "Achievement Archive", icon: Trophy, path: "/dashboard/achievements" },
     { name: "Info", icon: BarChart3, path: "/dashboard/info" },
-    { name: "Settings", icon: Settings, path: "/dashboard/settings" },
   ]
 
   return (
@@ -294,7 +302,7 @@ const Dashboard = () => {
                     <LogOut className="mr-1 h-3 w-3" /> Logout
                   </button>
                 </div>
-              )}
+              )}c
             </div>
           ) : (
             <div className="flex items-center">
@@ -451,16 +459,23 @@ const Dashboard = () => {
                 </div>
               }
             />
-            <Route path="goals" element={<Goals />} />
-            <Route path="calendar" element={<CalendarPage />} />
-            <Route path="achievements" element={<AchievementArchive />} />
-            <Route path="settings" element={<SettingsPage />} />
+            <Route path="goals" element={<Goals sidebarCollapsed={sidebarCollapsed} />} />
+            <Route path="schedules" element={<SchedulesPage sidebarCollapsed={sidebarCollapsed} />} />
+            <Route path="manual" element={<ManualSchedule sidebarCollapsed={sidebarCollapsed} />} />
+            <Route path="achievements" element={<AchievementArchive sidebarCollapsed={sidebarCollapsed} />} />
             <Route path="info" element={<InfoPage />} />
           </Routes>
         </main>
       </div>
       {mobileMenuOpen && (
         <div className="fixed inset-0 z-10 bg-black bg-opacity-50 md:hidden" onClick={toggleMobileMenu}></div>
+      )}
+
+      {/* Success Message */}
+      {showSuccessMessage && (
+        <div className="fixed bottom-4 right-4 bg-emerald-500/20 backdrop-blur-md rounded-lg p-4 border border-emerald-400/30 text-emerald-200 z-50 animate-pulse">
+          <p className="font-medium">✅ Schedule saved to Schedules!</p>
+        </div>
       )}
     </div>
   )
