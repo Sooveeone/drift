@@ -274,7 +274,7 @@ const ScheduleGenerator: React.FC = () => {
       // Clear initialization flag if no stored data
       localStorage.removeItem('schedule_initializing');
     }
-  }, [hasInitialized]);
+  }, []); // Empty dependency array - should only run once on mount
 
   const allDates = tableData.map(row => row.date);
   const maxTasks = Math.max(...tableData.map(row => row.tasks.length), 0);
