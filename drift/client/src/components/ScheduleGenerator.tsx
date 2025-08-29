@@ -329,15 +329,31 @@ const ScheduleGenerator: React.FC = () => {
 
   // Check if goal should be saved when 100% is reached
   useEffect(() => {
+    // Debug logging to understand what's happening
+    console.log('Achievement check:', {
+      progress,
+      goalSaved,
+      showSaveModal,
+      goalName: goalName.trim(),
+      hasInitialized,
+      endDate
+    });
+
     // Only trigger achievement save for schedules that have been properly initialized
     if (progress === 100 && !goalSaved && !showSaveModal && goalName.trim() && hasInitialized) {
+      console.log('All conditions met, checking if already saved...');
+      
       // Check if this goal was already saved to prevent duplicate saves
       const savedKey = `goal_saved_${goalName}_${endDate}`;
       const alreadySaved = localStorage.getItem(savedKey);
       
+      console.log('Saved key:', savedKey, 'Already saved:', alreadySaved);
+      
       if (!alreadySaved) {
+        console.log('Showing save modal!');
         setShowSaveModal(true);
       } else {
+        console.log('Goal already saved, marking as saved');
         setGoalSaved(true);
       }
     }
