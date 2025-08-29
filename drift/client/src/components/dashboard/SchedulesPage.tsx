@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, Clock, Target, Trash2, Play, Bot, Edit3 } from 'lucide-react';
+import { Calendar, Clock, Target, Trash2, Play, Bot, Edit3, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { scheduleAPI } from '../../services/api';
 
@@ -27,17 +27,21 @@ interface SchedulesPageProps {
 const SchedulesPage: React.FC<SchedulesPageProps> = ({ sidebarCollapsed }) => {
   const navigate = useNavigate();
   const [schedules, setSchedules] = useState<SavedSchedule[]>([]);
+  const [loading, setLoading] = useState(true);
 
   // Load schedules from API
   useEffect(() => {
     const loadSchedules = async () => {
       try {
+        setLoading(true);
         const userSchedules = await scheduleAPI.getAll();
         setSchedules(userSchedules.sort((a: SavedSchedule, b: SavedSchedule) => 
           new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
         ));
       } catch (error) {
         console.error('Error loading schedules:', error);
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -113,16 +117,23 @@ const SchedulesPage: React.FC<SchedulesPageProps> = ({ sidebarCollapsed }) => {
   };
 
   return (
-    <div className="min-h-full bg-gradient-to-b from-drift-orange via-drift-pink to-drift-blue p-6">
-      <div className="max-w-6xl mx-auto">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-white mb-2">Your Schedules</h1>
-          <p className="text-white/80 text-lg">All your created schedules in one place</p>
-        </div>
+    <div className="max-w-6xl mx-auto py-8 px-4">
+      {/* Header */}
+      <div className="text-center mb-8">
+        <h1 className="text-4xl font-bold text-white mb-2">Your Schedules</h1>
+        <p className="text-white/80 text-lg">All your created schedules in one place</p>
+      </div>
 
-        {/* Schedules Grid */}
-        {schedules.length > 0 ? (
+      {/* Loading State */}
+      {loading ? (
+        <div className="flex flex-col items-center justify-center py-16">
+          <Loader2 className="h-12 w-12 text-white animate-spin mb-4" />
+          <p className="text-white/80 text-lg">Loading your schedules...</p>
+        </div>
+      ) : (
+        <>
+          {/* Schedules Grid */}
+          {schedules.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {schedules.map((schedule) => (
               <div
@@ -286,7 +297,8 @@ const SchedulesPage: React.FC<SchedulesPageProps> = ({ sidebarCollapsed }) => {
             </div>
           </div>
         )}
-      </div>
+        </>
+      )}
     </div>
   );
 };

@@ -234,14 +234,13 @@ const ManualSchedule: React.FC<ManualScheduleProps> = ({ sidebarCollapsed }) => 
     scheduleDays.some(day => day.tasks.length > 0 && day.tasks.some(task => task.text.trim()));
 
   return (
-    <div className="min-h-full bg-gradient-to-b from-drift-orange via-drift-pink to-drift-blue">
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        {/* Header Section */}
-        <div className="text-center mb-8">
-          <img src={DriftLogo} alt="Drift logo" className="h-16 w-16 mx-auto mb-4" />
-          <h1 className="text-4xl font-bold text-white mb-2">Create Your Manual Schedule</h1>
-          <p className="text-white/80 text-lg">Design your own daily action plan</p>
-        </div>
+    <div className="max-w-7xl mx-auto px-4 py-8">
+      {/* Header Section */}
+      <div className="text-center mb-8">
+        <img src={DriftLogo} alt="Drift logo" className="h-16 w-16 mx-auto mb-4" />
+        <h1 className="text-4xl font-bold text-white mb-2">Create Your Manual Schedule</h1>
+        <p className="text-white/80 text-lg">Design your own daily action plan</p>
+      </div>
 
         {/* Goal Information Form */}
         <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 mb-8 border border-white/20">
@@ -406,13 +405,12 @@ const ManualSchedule: React.FC<ManualScheduleProps> = ({ sidebarCollapsed }) => 
           )}
         </div>
 
-        {/* Success Message */}
-        {showSuccessMessage && (
-          <div className="fixed bottom-4 right-4 bg-emerald-500/20 backdrop-blur-md rounded-lg p-4 border border-emerald-400/30 text-emerald-200 z-50 animate-pulse">
-            <p className="font-medium">✅ Schedule saved to Schedules!</p>
-          </div>
-        )}
-      </div>
+      {/* Success Message */}
+      {showSuccessMessage && (
+        <div className="fixed bottom-4 right-4 bg-emerald-500/20 backdrop-blur-md rounded-lg p-4 border border-emerald-400/30 text-emerald-200 z-50 animate-pulse">
+          <p className="font-medium">✅ Schedule saved to Schedules!</p>
+        </div>
+      )}
     </div>
   );
 };

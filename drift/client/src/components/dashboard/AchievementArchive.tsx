@@ -117,7 +117,7 @@ const AchievementArchive: React.FC<AchievementArchiveProps> = ({ sidebarCollapse
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-drift-orange via-drift-pink to-drift-blue flex items-center justify-center">
+      <div className="max-w-6xl mx-auto px-4 py-8 min-h-[50vh] flex items-center justify-center">
         <div className="text-center text-white">
           <img src={DriftLogo} alt="Drift logo" className="h-24 w-24 mx-auto mb-6 animate-spin" />
           <h2 className="text-2xl font-bold mb-4">Loading Achievements...</h2>
@@ -128,7 +128,7 @@ const AchievementArchive: React.FC<AchievementArchiveProps> = ({ sidebarCollapse
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-drift-orange via-drift-pink to-drift-blue flex items-center justify-center">
+      <div className="max-w-6xl mx-auto px-4 py-8 min-h-[50vh] flex items-center justify-center">
         <div className="text-center text-white">
           <img src={DriftLogo} alt="Drift logo" className="h-24 w-24 mx-auto mb-6 opacity-50" />
           <h2 className="text-3xl font-bold mb-4">Error Loading Achievements</h2>
@@ -146,7 +146,7 @@ const AchievementArchive: React.FC<AchievementArchiveProps> = ({ sidebarCollapse
 
   if (completedGoals.length === 0) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-drift-orange via-drift-pink to-drift-blue flex items-center justify-center">
+      <div className="max-w-6xl mx-auto px-4 py-8 min-h-[50vh] flex items-center justify-center">
         <div className="text-center text-white">
           <img src={DriftLogo} alt="Drift logo" className="h-24 w-24 mx-auto mb-6 opacity-50" />
           <h2 className="text-3xl font-bold mb-4">No Achievements Yet</h2>
@@ -168,8 +168,7 @@ const AchievementArchive: React.FC<AchievementArchiveProps> = ({ sidebarCollapse
   const IconComponent = getGoalIcon(currentGoal?.objective || '');
 
   return (
-    <div className="min-h-full bg-gradient-to-b from-drift-orange via-drift-pink to-drift-blue overflow-auto">
-      <div className="max-w-6xl mx-auto px-4 py-8 min-h-full flex flex-col">
+    <div className="max-w-6xl mx-auto px-4 py-8 flex flex-col">
         {/* Header */}
         <div className="relative mb-8 md:mb-12">
           {/* Centered Title */}
@@ -580,8 +579,6 @@ const AchievementArchive: React.FC<AchievementArchiveProps> = ({ sidebarCollapse
             </div>
           </div>
         )}
-
-      </div>
     </div>
   );
 };
