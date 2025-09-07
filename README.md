@@ -14,7 +14,7 @@ Prefer flexibility? Build your own schedule by adding tasks to specific days and
 Organized checklists and progress bars keep you accountable and show exactly what needs to be done each day.
 
 🌱 Growth Visualization
-Watch your Growth Tree flourish as you complete tasks — a motivating way to see consistency turn into real progress.
+Watch your Growth Tree come to life with every task you complete. Each step you take adds new growth, turning consistency into a living symbol of your progress.
 
 🏆 Achievements Archive
 Your personal hall of fame. When you finish a goal, Drift saves it in your archive along with uploaded photos, progress notes, and completion stats.
